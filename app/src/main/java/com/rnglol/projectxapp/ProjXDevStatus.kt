@@ -10,6 +10,7 @@ import android.util.Log
 import android.widget.EditText
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.Task
+import org.json.JSONObject
 
 class ProjXDevStatus {
     private val TAG = "ProjectX/Status"
@@ -103,5 +104,17 @@ class ProjXDevStatus {
         fusedLocationClient.requestLocationUpdates(locationRequest,
             locationCallback,
             Looper.getMainLooper())
+    }
+
+    fun getAndSendStatus(time_stamp: String, sendJsonUrl: String, androidId: String) {
+        prepareBatteryStatus()
+        var jsonPos = JSONObject()
+        jsonPos.put("time_stamp",time_stamp)
+        jsonPos.put("android_id",androidId)
+        jsonPos.put("latitude",latitude)
+        jsonPos.put("longitude",longitude)
+        jsonPos.put("charge_level",batteryPct)
+        jsonPos.put("charge_status",chargeStatus)
+        UploadState().execute(sendJsonUrl, androidId, jsonPos.toString())
     }
 }

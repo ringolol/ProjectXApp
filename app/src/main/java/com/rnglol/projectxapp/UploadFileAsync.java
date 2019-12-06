@@ -19,12 +19,14 @@ public class UploadFileAsync extends AsyncTask<String, Void, String> {
             String fileName = params[1];
             String fileSendName = params[2];
             String sendFileUrl = params[3];
-            String android_id = params[4];
+            String androidId = params[4];
+            String timeStamp = params[5];
 
             utility = new MultipartUtility(sendFileUrl,"US-ASCII");
 
             File sourceFile = new File(path,fileName);
-            utility.addFormField("android_id",android_id);
+            utility.addFormField("android_id",androidId);
+            utility.addFormField("time_stamp",timeStamp);
 
             utility.addFilePart(fileSendName, sourceFile);
 

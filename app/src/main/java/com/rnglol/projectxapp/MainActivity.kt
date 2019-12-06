@@ -110,18 +110,12 @@ class MainActivity : AppCompatActivity() {
     private fun sendData() {
         Log.d(TAG,"Sending data")
 
+        val time_stamp = (System.currentTimeMillis()/1000).toString()
         // shoot and send picture to DB
-        //camera?.shootAndSendPhoto()
+        camera?.shootAndSendPhoto(time_stamp, sendFileUrl, fileSendName, androidId)
 
-        // todo send status
-        status?.prepareBatteryStatus()
-        var jsonPos = JSONObject()
-        jsonPos.put("android_id",androidId)
-        jsonPos.put("latitude",status?.latitude)
-        jsonPos.put("longitude",status?.longitude)
-        jsonPos.put("charge_level",status?.batteryPct)
-        jsonPos.put("charge_status",status?.chargeStatus)
-        UploadState().execute(sendJsonUrl, androidId, jsonPos.toString())
+        // get and send status
+        status?.getAndSendStatus(time_stamp, sendJsonUrl, androidId)
     }
 
     override fun onResume() {

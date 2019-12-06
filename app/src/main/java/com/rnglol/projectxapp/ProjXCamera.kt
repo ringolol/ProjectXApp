@@ -107,7 +107,8 @@ class ProjXCamera {
         viewFinder.setTransform(matrix)
     }
 
-    fun shootAndSendPhoto() {
+    fun shootAndSendPhoto(time_stamp: String, sendFileUrl: String,
+                          fileSendName: String, androidId: String) {
 
         val fileDir: String = mainActivity.externalMediaDirs.first().toString()
         val file = File(fileDir, fileName)
@@ -136,9 +137,11 @@ class ProjXCamera {
                     UploadFileAsync()
                         .execute(fileDir,
                                  fileName,
-                                 mainActivity.fileSendName,
-                                 mainActivity.sendFileUrl,
-                                 mainActivity.androidId)
+                                 fileSendName,
+                                 sendFileUrl,
+                                 androidId,
+                                 time_stamp)
+
                     viewFinder.post {
                         Toast.makeText(mainActivity.baseContext, msg, Toast.LENGTH_SHORT).show()
                     }
