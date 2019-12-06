@@ -3,55 +3,35 @@ package com.rnglol.projectxapp;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.io.IOException;
+import java.util.List;
 
 class UploadState extends AsyncTask<String, Void, String> {
 
+    private final static String TAG = "ProjectX/UploadJSON";
+    private MultipartUtility utility;
+
     @Override
     protected String doInBackground(String... params) {
-
-        String data = "";
-
-        HttpURLConnection httpURLConnection = null;
         try {
+            String sendJsonUrl = params[0];
+            String androidId = params[1];
+            String json = params[2];
 
-            httpURLConnection = (HttpURLConnection) new URL(params[0]).openConnection();
-            httpURLConnection.setRequestMethod("POST");
+            utility = new MultipartUtility(sendJsonUrl,"US-ASCII");
+            utility.addFormField("android_id",androidId);
+            utility.addFormField("json",json);
 
-            httpURLConnection.setDoOutput(true);
+            // Stop utility and get responses from the server
+            List<String> responses = utility.finish();
 
-            DataOutputStream wr = new DataOutputStream(httpURLConnection.getOutputStream());
-            wr.writeBytes("PostData=" + params[1]);
-            wr.flush();
-            wr.close();
-
-            InputStream in = httpURLConnection.getInputStream();
-            InputStreamReader inputStreamReader = new InputStreamReader(in);
-
-            int inputStreamData = inputStreamReader.read();
-            while (inputStreamData != -1) {
-                char current = (char) inputStreamData;
-                inputStreamData = inputStreamReader.read();
-                data += current;
+            for(int i=0; i < responses.size(); i++) {
+                Log.d(TAG, "Server output: " + responses.get(i));
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            if (httpURLConnection != null) {
-                httpURLConnection.disconnect();
-            }
         }
-
-        return data;
+        return "";
     }
 
-    @Override
-    protected void onPostExecute(String result) {
-        super.onPostExecute(result);
-        Log.e("TAG", result); // this is expecting a response code to be sent from your server upon receiving the POST data
-    }
 }

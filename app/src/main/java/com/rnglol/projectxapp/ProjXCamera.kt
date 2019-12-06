@@ -134,7 +134,11 @@ class ProjXCamera {
                     // todo send file to DB
 
                     UploadFileAsync()
-                        .execute(fileDir, fileName, mainActivity.sendFileUrl, mainActivity.android_id)
+                        .execute(fileDir,
+                                 fileName,
+                                 mainActivity.fileSendName,
+                                 mainActivity.sendFileUrl,
+                                 mainActivity.androidId)
                     viewFinder.post {
                         Toast.makeText(mainActivity.baseContext, msg, Toast.LENGTH_SHORT).show()
                     }

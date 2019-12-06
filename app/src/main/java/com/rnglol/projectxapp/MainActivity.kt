@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import org.json.JSONObject
 import java.util.*
 
 
@@ -22,14 +23,20 @@ import java.util.*
 private const val REQUEST_CODE_PERMISSIONS = 10
 
 // This is an array of all the permission specified in the manifest.
-private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA, Manifest.permission.INTERNET)
+private val REQUIRED_PERMISSIONS = arrayOf(
+        Manifest.permission.CAMERA,
+        Manifest.permission.INTERNET,
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION)
 
 class MainActivity : AppCompatActivity() {
 
     private val TAG = "ProjectX"
     private var camera: ProjXCamera? = null
+    private var status: ProjXDevStatus? = null
     private lateinit var viewFinder: TextureView
-    public val android_id = "krakoziabra314"
+    // todo make it soft-coded
+    val androidId: String = "krakoziabra314"
 
     // Send data
     private var sendDataTimer = Timer()
@@ -37,6 +44,9 @@ class MainActivity : AppCompatActivity() {
     private val sendInterval: Long = 30000
     val sendFileUrl = "http://31.134.153.18/upload_file.php"
     val sendJsonUrl = "http://31.134.153.18/get_json.php"
+
+    //
+    val fileSendName = "sent_image"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,19 +67,16 @@ class MainActivity : AppCompatActivity() {
         // set-up timer
         class SendDataTask : TimerTask() {
             override fun run() {
-                Log.d(TAG,"Sending data")
-
-                // todo send data here
-                // shoot and send picture to DB
-                camera?.shootAndSendPhoto()
+                sendData()
             }
         }
         sendDataTask = SendDataTask()
         sendDataTimer.scheduleAtFixedRate(sendDataTask, 0, sendInterval)
 
+        status = ProjXDevStatus(this)
+
         findViewById<ImageButton>(R.id.capture_button).setOnClickListener {
-            camera?.shootAndSendPhoto()
-            UploadState().execute(sendJsonUrl, "TEST_DATA_STRING")
+            sendData()
         }
     }
 
@@ -98,5 +105,29 @@ class MainActivity : AppCompatActivity() {
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(
             baseContext, it) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun sendData() {
+        Log.d(TAG,"Sending data")
+
+        // shoot and send picture to DB
+        //camera?.shootAndSendPhoto()
+
+        // todo send status
+        status?.prepareBatteryStatus()
+        var jsonPos = JSONObject()
+        jsonPos.put("android_id",androidId)
+        jsonPos.put("latitude",status?.latitude)
+        jsonPos.put("longitude",status?.longitude)
+        jsonPos.put("charge_level",status?.batteryPct)
+        jsonPos.put("charge_status",status?.chargeStatus)
+        UploadState().execute(sendJsonUrl, androidId, jsonPos.toString())
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        // start location updates
+        status?.startLocationUpdates()
     }
 }
