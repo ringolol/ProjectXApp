@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <EditTextPreference
+        app:key="android_id"
+        app:title="Android ID"
+        app:useSimpleSummaryProvider="true"
+        app:dialogTitle="Enter android ID"/>
+</androidx.preference.PreferenceScreen>

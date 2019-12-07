@@ -14,6 +14,7 @@ import androidx.camera.core.*
 import java.io.File
 import java.util.concurrent.Executors
 
+/* Original code: https://codelabs.developers.google.com/codelabs/camerax-getting-started/#0 */
 class ProjXCamera {
 
     private val TAG = "ProjectX/Camera"
@@ -105,11 +106,14 @@ class ProjXCamera {
 
         // Finally, apply transformations to our TextureView
         viewFinder.setTransform(matrix)
+
+
     }
 
     fun shootAndSendPhoto(time_stamp: String, sendFileUrl: String,
                           fileSendName: String, androidId: String) {
 
+        //todo check that texture is ready
         val fileDir: String = mainActivity.externalMediaDirs.first().toString()
         val file = File(fileDir, fileName)
 
@@ -132,7 +136,6 @@ class ProjXCamera {
                 override fun onImageSaved(file: File) {
                     val msg = "Photo capture succeeded: ${file.absolutePath}"
                     Log.d(TAG, msg)
-                    // todo send file to DB
 
                     UploadFileAsync()
                         .execute(fileDir,

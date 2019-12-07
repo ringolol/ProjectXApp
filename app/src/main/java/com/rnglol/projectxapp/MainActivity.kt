@@ -4,16 +4,21 @@ package com.rnglol.projectxapp
 // different implementations so we list them here to disambiguate.
 
 import android.Manifest
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.view.TextureView
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import org.json.JSONObject
+import androidx.preference.EditTextPreference
+import androidx.preference.Preference
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.PreferenceManager
 import java.util.*
 
 
@@ -29,31 +34,60 @@ private val REQUIRED_PERMISSIONS = arrayOf(
         Manifest.permission.ACCESS_FINE_LOCATION,
         Manifest.permission.ACCESS_COARSE_LOCATION)
 
+// android_id fragment
+class MySettingsFragment : PreferenceFragmentCompat() {
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        setPreferencesFromResource(R.xml.settings, rootKey)
+    }
+}
+
+// todo-1 add listener to get camera options from the server
+// todo-2 add device registration
+// todo-3 check position listener
+// todo-4 check if camera is ready when shooting
+// todo-5 watch after CameraX updates (it's in alpha faze)
+
 class MainActivity : AppCompatActivity() {
 
     private val TAG = "ProjectX"
     private var camera: ProjXCamera? = null
     private var status: ProjXDevStatus? = null
     private lateinit var viewFinder: TextureView
-    // todo make it soft-coded
-    val androidId: String = "krakoziabra314"
+
+    private var androidId: String = ""
+    private lateinit var sharedPreferences: SharedPreferences
 
     // Send data
     private var sendDataTimer = Timer()
     private var sendDataTask: TimerTask? = null
     private val sendInterval: Long = 30000
-    val sendFileUrl = "http://31.134.153.18/upload_file.php"
-    val sendJsonUrl = "http://31.134.153.18/get_json.php"
+    private val sendFileUrl = "http://31.134.153.18/app_scripts/upload_file.php"
+    private val sendJsonUrl = "http://31.134.153.18/app_scripts/get_json.php"
 
     //
-    val fileSendName = "sent_image"
+    private val fileSendName = "sent_image"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.activity_main)
 
         viewFinder = findViewById(R.id.view_finder)
 
+
+        // add preferences
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+
+        if(sharedPreferences.getString("android_id", "")  == "") {
+            Log.d(TAG,"SET UUID")
+            val uniqueID = UUID.randomUUID().toString()
+            sharedPreferences.edit().putString("android_id", uniqueID).apply()
+        }
+
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.place_holder, MySettingsFragment())
+            .commit()
 
         // Request camera permissions
         if (allPermissionsGranted()) {
@@ -110,12 +144,14 @@ class MainActivity : AppCompatActivity() {
     private fun sendData() {
         Log.d(TAG,"Sending data")
 
-        val time_stamp = (System.currentTimeMillis()/1000).toString()
+        androidId = sharedPreferences.getString("android_id", "")?:""
+
+        val timeStamp = (System.currentTimeMillis()/1000).toString()
         // shoot and send picture to DB
-        camera?.shootAndSendPhoto(time_stamp, sendFileUrl, fileSendName, androidId)
+        camera?.shootAndSendPhoto(timeStamp, sendFileUrl, fileSendName, androidId)
 
         // get and send status
-        status?.getAndSendStatus(time_stamp, sendJsonUrl, androidId)
+        status?.getAndSendStatus(timeStamp, sendJsonUrl, androidId)
     }
 
     override fun onResume() {

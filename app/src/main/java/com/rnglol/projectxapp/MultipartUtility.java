@@ -14,6 +14,7 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
+/* Original code: https://stackoverflow.com/a/34409142/11162245 */
 public class MultipartUtility {
     private final String boundary;
     private static final String LINE_FEED = "\r\n";
