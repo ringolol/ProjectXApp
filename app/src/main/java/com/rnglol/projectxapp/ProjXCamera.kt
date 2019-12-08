@@ -1,8 +1,5 @@
 package com.rnglol.projectxapp
 
-// Your IDE likely can auto-import these classes, but there are several
-// different implementations so we list them here to disambiguate.
-
 import android.graphics.Matrix
 import android.util.Log
 import android.util.Size
@@ -14,33 +11,42 @@ import androidx.camera.core.*
 import java.io.File
 import java.util.concurrent.Executors
 
-/* Original code: https://codelabs.developers.google.com/codelabs/camerax-getting-started/#0 */
-class ProjXCamera {
+/* Original code: https://codelabs.developers.google.com/codelabs/camerax-getting-started */
 
+
+class ProjXCamera// Add this at the end of onCreate function
+    (main_act: MainActivity) {
+
+    // tag for logger
     private val TAG = "ProjectX/Camera"
 
     // CameraX
+    // for creating new thread
     private val executor = Executors.newSingleThreadExecutor()
+    // View for displaying picture from camera
     private var viewFinder: TextureView
+    // todo add description
     private var imageCapture: ImageCapture? = null
 
-    // temp file
+    // temp file for saving images
     private val fileName: String = "phone.jpg"
 
-    // MainActivity
-    private var mainActivity:MainActivity
+    // MainActivity pointer
+    private val mainActivity:MainActivity = main_act
 
-
-    constructor(main_act: MainActivity) {
-        mainActivity = main_act
-        // Add this at the end of onCreate function
-
+    // constructor
+    init {
+        Log.d(TAG, "Init camera")
+        // get viewFinder by it's ID
         viewFinder = mainActivity.findViewById(R.id.view_finder)
-
+        // start camera in a new thread
         viewFinder.post { startCamera() }
     }
 
-    fun startCamera() {
+
+    private fun startCamera() {
+
+        Log.d(TAG, "Start camera")
 
         // Every time the provided texture view changes, recompute layout
         viewFinder.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
@@ -87,6 +93,8 @@ class ProjXCamera {
         CameraX.bindToLifecycle(mainActivity, preview, imageCapture)
     }
 
+
+    // transform viewFinder image
     private fun updateCameraTransform() {
         val matrix = Matrix()
 
@@ -106,26 +114,30 @@ class ProjXCamera {
 
         // Finally, apply transformations to our TextureView
         viewFinder.setTransform(matrix)
-
-
     }
+
 
     fun shootAndSendPhoto(time_stamp: String, sendFileUrl: String,
                           fileSendName: String, androidId: String) {
 
-        //todo check that texture is ready
-        val fileDir: String = mainActivity.externalMediaDirs.first().toString()
+        // todo check that texture is ready?
+        // get internal app dir
+        val fileDir: String = mainActivity.filesDir.toString()
+        // create file in this dir
         val file = File(fileDir, fileName)
 
         Log.d(TAG,"Shooting photo: ${fileDir}/${fileName}")
 
+        // take photo
         imageCapture?.takePicture(file, executor,
             object : ImageCapture.OnImageSavedListener {
+                // on error
                 override fun onError(
                     imageCaptureError: ImageCapture.ImageCaptureError,
                     message: String,
                     exc: Throwable?
                 ) {
+                    // yell about error
                     val msg = "Photo capture failed: $message"
                     Log.e(TAG, msg, exc)
                     viewFinder.post {
@@ -133,10 +145,12 @@ class ProjXCamera {
                     }
                 }
 
+                //on successful image save
                 override fun onImageSaved(file: File) {
-                    val msg = "Photo capture succeeded: ${file.absolutePath}"
+                    val msg = "Photo captured successfully"
                     Log.d(TAG, msg)
 
+                    // send photo to server in a new thread
                     UploadFileAsync()
                         .execute(fileDir,
                                  fileName,

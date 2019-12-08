@@ -1,8 +1,5 @@
 package com.rnglol.projectxapp
 
-// Your IDE likely can auto-import these classes, but there are several
-// different implementations so we list them here to disambiguate.
-
 import android.Manifest
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -20,7 +17,6 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
 import java.util.*
-
 
 // This is an arbitrary number we are using to keep track of the permission
 // request. Where an app has multiple context for requesting permission,
@@ -41,56 +37,93 @@ class MySettingsFragment : PreferenceFragmentCompat() {
     }
 }
 
+//                     TODO LIST
 // todo-1 add listener to get camera options from the server
 // todo-2 add device registration
-// todo-3 check position listener
+// todo-3 if fine location not granted use course location
 // todo-4 check if camera is ready when shooting
 // todo-5 watch after CameraX updates (it's in alpha faze)
+// todo-6 send error messages to server
+
+
+
+//                                   MAIN APP SCHEME
+//
+//
+//        ****************************             *****************************
+//        *  <Main Activity>         *         --->*  <ProjXCamera>            *
+//        *                          *         |   *                           *
+//        *  Send Timer              *         |   *  Get photo by CameraX     *
+//        *   - Shoot and send photo-*----------   *  Send photo               *
+//        *   - Get and send status--*---          *    - UploadFileAsync()----*----------
+//        ****************************  |          *****************************         |
+//                                      |                                                |
+//                                      |                                                |
+//        **************************    |          ***********************************   |
+//        *  <ProjXDevStatus>      *<----     ---->*  <MultipartUtility>             *<---
+//        *                        *          |    *                                 *
+//        *  Get Status            *          |    *  Send fields (JSON, value, ...) *
+//        *   - Get location       *          |    *  Send files (as byte string)    *
+//        *   - Get battery status *          |    ***********************************
+//        *  Send Status           *          |
+//        *   - UploadState()------*-----------
+//        **************************
+
+
 
 class MainActivity : AppCompatActivity() {
 
+    // tag for logger
     private val TAG = "ProjectX"
-    private var camera: ProjXCamera? = null
-    private var status: ProjXDevStatus? = null
-    private lateinit var viewFinder: TextureView
 
+    // camera is used for taking and sending photos
+    private var camera: ProjXCamera? = null
+    // status is used for getting and sending device statuses
+    private var status: ProjXDevStatus? = null
+
+    // device id, which we generate or set for it
     private var androidId: String = ""
+    // preferences is used for storing android id
     private lateinit var sharedPreferences: SharedPreferences
 
-    // Send data
+    // send data timer settings
     private var sendDataTimer = Timer()
     private var sendDataTask: TimerTask? = null
     private val sendInterval: Long = 30000
+
+    // send URL's
     private val sendFileUrl = "http://31.134.153.18/app_scripts/upload_file.php"
     private val sendJsonUrl = "http://31.134.153.18/app_scripts/get_json.php"
-
-    //
+    // image identifier during sending
     private val fileSendName = "sent_image"
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        Log.d(TAG,"Creating Main Activity")
 
+        // default things
+        super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        viewFinder = findViewById(R.id.view_finder)
-
-
-        // add preferences
+        // get preferences
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-
+        // if android ID preference is not set
         if(sharedPreferences.getString("android_id", "")  == "") {
-            Log.d(TAG,"SET UUID")
+            Log.d(TAG,"Android ID is empty, generate android ID")
+            // generate android ID
             val uniqueID = UUID.randomUUID().toString()
+            // and set android ID preference
             sharedPreferences.edit().putString("android_id", uniqueID).apply()
         }
-
+        // add special element on layout to manipulate android ID preference
         supportFragmentManager
             .beginTransaction()
             .replace(R.id.place_holder, MySettingsFragment())
             .commit()
 
-        // Request camera permissions
+        // request permissions
         if (allPermissionsGranted()) {
+            Log.d(TAG,"All permissions granted")
+            // if all permissions granted init camera
             camera = ProjXCamera(this)
         } else {
             Log.d(TAG,"Request permission")
@@ -98,18 +131,25 @@ class MainActivity : AppCompatActivity() {
                 this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
 
+        // init status
+        status = ProjXDevStatus(this)
+
         // set-up timer
+        // send data on each tick
         class SendDataTask : TimerTask() {
             override fun run() {
+                Log.d(TAG,"Send timer tic")
                 sendData()
             }
         }
+        // start timer
         sendDataTask = SendDataTask()
         sendDataTimer.scheduleAtFixedRate(sendDataTask, 0, sendInterval)
 
-        status = ProjXDevStatus(this)
-
+        // add on click listener to capture button
+        // send data on click
         findViewById<ImageButton>(R.id.capture_button).setOnClickListener {
+            Log.d(TAG,"Capture btn click")
             sendData()
         }
     }
@@ -142,7 +182,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendData() {
-        Log.d(TAG,"Sending data")
+        Log.d(TAG,"Sending data...")
 
         androidId = sharedPreferences.getString("android_id", "")?:""
 
@@ -157,6 +197,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
+        Log.d(TAG,"resume to app, start location upd")
         // start location updates
         status?.startLocationUpdates()
     }
