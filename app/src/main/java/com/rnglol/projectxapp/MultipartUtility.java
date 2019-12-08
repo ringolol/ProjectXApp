@@ -57,15 +57,26 @@ public class MultipartUtility {
      * @param value field value
      */
     public void addFormField(String name, String value) {
+        // separate field -- my fix
+        writer.append(LINE_FEED);
+
         writer.append("--").append(boundary).append(LINE_FEED);
         writer.append("Content-Disposition: form-data; name=\"").append(name).append("\"")
                 .append(LINE_FEED);
-        writer.append("Content-Type: text/plain; charset=").append(charset).append(
-                LINE_FEED);
+        writer.append("Content-Type: text/plain; charset=").append(charset).append(LINE_FEED);
         writer.append(LINE_FEED);
-        writer.append(value).append(LINE_FEED);
+        writer.append(value);
+        // take care of the edge case, when sending only one field
+        //.append(LINE_FEED);
         writer.flush();
     }
+
+    /**
+     * Adds a form field to the request
+     *
+     * @param name  field name
+     * @param value field value
+     */
 
     /**
      * Adds a upload file section to the request
@@ -77,8 +88,13 @@ public class MultipartUtility {
     public void addFilePart(String fieldName, File uploadFile)
             throws IOException {
         String fileName = uploadFile.getName();
+
+        // separate the field -- my fix
+        writer.append(LINE_FEED);
+
         writer.append("--").append(boundary).append(LINE_FEED);
-        writer.append("Content-Disposition: form-data; name=\"").append(fieldName).append("\"; filename=\"").append(fileName).append("\"")
+        writer.append("Content-Disposition: form-data; name=\"").append(fieldName)
+                .append("\"; filename=\"").append(fileName).append("\"")
                 .append(LINE_FEED);
         writer.append("Content-Type: ").append(URLConnection.guessContentTypeFromName(fileName))
                 .append(LINE_FEED);
@@ -105,6 +121,8 @@ public class MultipartUtility {
      * @param value - value of the header field
      */
     public void addHeaderField(String name, String value) {
+        // first line is not tested, use it carefully
+        writer.append(LINE_FEED);
         writer.append(name).append(": ").append(value).append(LINE_FEED);
         writer.flush();
     }

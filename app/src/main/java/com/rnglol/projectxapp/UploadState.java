@@ -13,17 +13,17 @@ class UploadState extends AsyncTask<String, Void, String> {
     @Override
     protected String doInBackground(String... params) {
         try {
-            // input paremeters
+            Log.d(TAG, "Sending JSON...");
+
+            // input parameters
             String sendJsonUrl = params[0];
-            String androidId = params[1];
-            String json = params[2];
+            String json = params[1];
 
             // create new utility
             MultipartUtility utility = new MultipartUtility(sendJsonUrl,"US-ASCII");
-            // send fields (android_id and JSON)
-            // todo don't send android_id twice
-            utility.addFormField("android_id",androidId);
-            utility.addFormField("json",json);
+
+            // send JSON
+            utility.addFormField("json", json);
 
             // Stop utility and get responses from the server
             List<String> responses = utility.finish();

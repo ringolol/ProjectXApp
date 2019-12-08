@@ -7,6 +7,15 @@
     tools:context=".MainActivity">
 
 
+    <ImageButton
+        android:id="@+id/settings_button"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_margin="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:srcCompat="@drawable/common_full_open_on_phone" />
+
     <TextureView
         android:id="@+id/view_finder"
         android:layout_width="0dp"
@@ -22,10 +31,9 @@
         android:layout_width="72dp"
         android:layout_height="72dp"
         android:layout_margin="24dp"
-        app:srcCompat="@android:drawable/ic_menu_camera"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:srcCompat="@android:drawable/ic_menu_camera" />
 
     <FrameLayout
         android:id="@+id/place_holder"

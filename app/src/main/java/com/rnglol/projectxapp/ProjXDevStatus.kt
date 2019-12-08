@@ -131,6 +131,6 @@ class ProjXDevStatus// init gps
         jsonPos.put("charge_status",chargeStatus)
 
         // upload JSON to server
-        UploadState().execute(sendJsonUrl, androidId, jsonPos.toString())
+        UploadState().execute(sendJsonUrl, jsonPos.toString())
     }
 }

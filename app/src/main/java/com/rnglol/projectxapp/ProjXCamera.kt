@@ -6,10 +6,12 @@ import android.util.Size
 import android.view.Surface
 import android.view.TextureView
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.camera.core.*
 import java.io.File
 import java.util.concurrent.Executors
+
 
 /* Original code: https://codelabs.developers.google.com/codelabs/camerax-getting-started */
 
@@ -25,7 +27,7 @@ class ProjXCamera// Add this at the end of onCreate function
     private val executor = Executors.newSingleThreadExecutor()
     // View for displaying picture from camera
     private var viewFinder: TextureView
-    // todo add description
+    // Used to capture image from camera
     private var imageCapture: ImageCapture? = null
 
     // temp file for saving images
@@ -43,10 +45,25 @@ class ProjXCamera// Add this at the end of onCreate function
         viewFinder.post { startCamera() }
     }
 
+    fun setSettings(useFlash: Boolean, resolution: Size, useFront: Boolean, bestQuality: Boolean) {
+
+        Log.d(TAG,"Set settings: flash $useFlash, res: ${resolution}, " +
+                "front: $useFront, quality: $bestQuality")
+
+        startCamera(useFlash, resolution, useFront, bestQuality)
+    }
 
     private fun startCamera() {
+        startCamera(useFlash = false, resolution = Size(480, 480), useFront = false, bestQuality = false)
+    }
+
+    private fun startCamera(useFlash: Boolean, resolution: Size, useFront: Boolean, bestQuality: Boolean) {
 
         Log.d(TAG, "Start camera")
+
+        CameraX.unbindAll()
+
+        //viewFinder.layoutParams = FrameLayout.LayoutParams(resolution.width,resolution.height)
 
         // Every time the provided texture view changes, recompute layout
         viewFinder.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
@@ -55,7 +72,7 @@ class ProjXCamera// Add this at the end of onCreate function
 
         // Create configuration object for the viewfinder use case
         val previewConfig = PreviewConfig.Builder().apply {
-            setTargetResolution(Size(640, 480))
+            setTargetResolution(resolution)
         }.build()
 
 
@@ -68,6 +85,7 @@ class ProjXCamera// Add this at the end of onCreate function
             // To update the SurfaceTexture, we have to remove it and re-add it
             val parent = viewFinder.parent as ViewGroup
             parent.removeView(viewFinder)
+
             parent.addView(viewFinder, 0)
 
             viewFinder.surfaceTexture = it.surfaceTexture
@@ -80,7 +98,25 @@ class ProjXCamera// Add this at the end of onCreate function
                 // We don't set a resolution for image capture; instead, we
                 // select a capture mode which will infer the appropriate
                 // resolution based on aspect ration and requested mode
-                setCaptureMode(ImageCapture.CaptureMode.MIN_LATENCY)
+
+                if(bestQuality)
+                    setCaptureMode(ImageCapture.CaptureMode.MAX_QUALITY)
+                else
+                    setCaptureMode(ImageCapture.CaptureMode.MIN_LATENCY)
+
+                if(useFlash)
+                    setFlashMode(FlashMode.ON)
+
+                // todo it also changes picture area, fix it
+                setTargetResolution(resolution)
+
+                // todo add capture stages?
+                //setMaxCaptureStages()
+
+                if(useFront)
+                    setLensFacing(CameraX.LensFacing.FRONT)
+                else
+                    setLensFacing(CameraX.LensFacing.BACK)
             }.build()
 
         // Build the image capture use case and attach button click listener
