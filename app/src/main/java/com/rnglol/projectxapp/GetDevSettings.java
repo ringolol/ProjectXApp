@@ -21,7 +21,7 @@ public class GetDevSettings extends AsyncTask<String, Void, String> {
     @Override
     protected String doInBackground(String... params) {
         try {
-            Log.d(TAG, "Getting settings...");
+            Log.v(TAG, "Getting settings...");
 
             // input parameters
             String getSettingsUrl = params[0];
@@ -38,7 +38,7 @@ public class GetDevSettings extends AsyncTask<String, Void, String> {
 
             // print responses
             for(int i=0; i < responses.size(); i++) {
-                Log.d(TAG, "Server output: " + responses.get(i));
+                Log.v(TAG, "Server output: " + responses.get(i));
             }
             return responses.get(0);
 

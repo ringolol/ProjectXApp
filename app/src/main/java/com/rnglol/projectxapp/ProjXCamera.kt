@@ -6,7 +6,6 @@ import android.util.Size
 import android.view.Surface
 import android.view.TextureView
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.camera.core.*
 import java.io.File
@@ -36,6 +35,12 @@ class ProjXCamera// Add this at the end of onCreate function
     // MainActivity pointer
     private val mainActivity:MainActivity = main_act
 
+    // camera settings
+    private var useFlash: Boolean = false
+    private var resolution: Size = Size(480, 480)
+    private var useFront: Boolean = false
+    private var bestQuality: Boolean = false
+
     // constructor
     init {
         Log.d(TAG, "Init camera")
@@ -45,25 +50,44 @@ class ProjXCamera// Add this at the end of onCreate function
         viewFinder.post { startCamera() }
     }
 
-    fun setSettings(useFlash: Boolean, resolution: Size, useFront: Boolean, bestQuality: Boolean) {
+    fun setSettings(uFlash: Boolean, reso: Size, uFront: Boolean, bQual: Boolean): Boolean {
+
+        if(uFlash == useFlash && resolution == reso && useFront == uFront && bestQuality == bQual)
+            return false
+
+        useFlash = uFlash
+        resolution = reso
+        useFront = uFront
+        bestQuality = bQual
 
         Log.d(TAG,"Set settings: flash $useFlash, res: ${resolution}, " +
                 "front: $useFront, quality: $bestQuality")
 
-        startCamera(useFlash, resolution, useFront, bestQuality)
+        try {
+            startCamera()
+        } catch (exc: Exception) {
+            Log.e(TAG,"Camera start error")
+        }
+
+        return true
     }
+
+    /*private fun startCamera() {
+        startCamera(useFlash = false, resolution = Size(480, 480), useFront = false, bestQuality = false)
+    }*/
 
     private fun startCamera() {
-        startCamera(useFlash = false, resolution = Size(480, 480), useFront = false, bestQuality = false)
-    }
-
-    private fun startCamera(useFlash: Boolean, resolution: Size, useFront: Boolean, bestQuality: Boolean) {
 
         Log.d(TAG, "Start camera")
 
+        // unbind everything we bind to life cycle
         CameraX.unbindAll()
 
-        //viewFinder.layoutParams = FrameLayout.LayoutParams(resolution.width,resolution.height)
+        // get camera orientation
+        val lensFacing = if(useFront)
+            CameraX.LensFacing.FRONT
+        else
+            CameraX.LensFacing.BACK
 
         // Every time the provided texture view changes, recompute layout
         viewFinder.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
@@ -73,6 +97,7 @@ class ProjXCamera// Add this at the end of onCreate function
         // Create configuration object for the viewfinder use case
         val previewConfig = PreviewConfig.Builder().apply {
             setTargetResolution(resolution)
+            setLensFacing(lensFacing)
         }.build()
 
 
@@ -95,8 +120,7 @@ class ProjXCamera// Add this at the end of onCreate function
         // Create configuration object for the image capture use case
         val imageCaptureConfig = ImageCaptureConfig.Builder()
             .apply {
-                // We don't set a resolution for image capture; instead, we
-                // select a capture mode which will infer the appropriate
+                // we select a capture mode which will infer the appropriate
                 // resolution based on aspect ration and requested mode
 
                 if(bestQuality)
@@ -108,15 +132,14 @@ class ProjXCamera// Add this at the end of onCreate function
                     setFlashMode(FlashMode.ON)
 
                 // todo it also changes picture area, fix it
+                // might not work because of CameraX being in alpha
                 setTargetResolution(resolution)
+
 
                 // todo add capture stages?
                 //setMaxCaptureStages()
 
-                if(useFront)
-                    setLensFacing(CameraX.LensFacing.FRONT)
-                else
-                    setLensFacing(CameraX.LensFacing.BACK)
+                setLensFacing(lensFacing)
             }.build()
 
         // Build the image capture use case and attach button click listener

@@ -54,6 +54,7 @@ class MySettingsFragment : PreferenceFragmentCompat() {
  todo-9 use web socket?
  todo-10 send images with low resolution
  todo-11 Check edge cases
+ todo-12 add comments to new code pieces
 */
 
 
@@ -68,13 +69,13 @@ class MySettingsFragment : PreferenceFragmentCompat() {
  todo-web-7 Change images on locations page (index.php)
  todo-web-8 Page devices output different data, use $_SESSION to store data
  todo-web-9 Add cookies?
+ todo-web-10 Check web php scripts and comment them
 */
 
 
 
 /*                      TODO DATABASE
- todo-db-1 Use unique flag?
- todo-db-2 Add default values to all fields
+ todo-db-1 ...
 */
 
 
@@ -121,7 +122,12 @@ class MainActivity : AppCompatActivity() {
     // send data timer settings
     private var sendDataTimer = Timer()
     private var sendDataTask: TimerTask? = null
-    private val sendInterval: Long = 30000
+    private val sendInterval: Long = 60000
+
+    // get settings timer
+    private var getSettTimer = Timer()
+    private var getSettTask: TimerTask? = null
+    private val getSettInterval: Long = 1000
 
     // send URL's
     private val sendFileUrl = "http://31.134.153.18/app_scripts/upload_file.php"
@@ -167,17 +173,29 @@ class MainActivity : AppCompatActivity() {
         // init status
         status = ProjXDevStatus(this)
 
-        // set-up timer
+        // set-up sending data timer
         // send data on each tick
         class SendDataTask : TimerTask() {
             override fun run() {
-                Log.d(TAG,"Send timer tic")
+                Log.v(TAG,"Send data timer TIC")
                 sendData()
             }
         }
-        // start timer
+        // start sending data timer
         sendDataTask = SendDataTask()
         sendDataTimer.scheduleAtFixedRate(sendDataTask, 0, sendInterval)
+
+        // set-up get settings timer
+        // send data on each tick
+        class GetSettTask : TimerTask() {
+            override fun run() {
+                Log.v(TAG,"Get settings timer TIC")
+                requestSettings()
+            }
+        }
+        // start get settings timer
+        getSettTask = GetSettTask()
+        getSettTimer.scheduleAtFixedRate(getSettTask, 0, getSettInterval)
 
         // add on click listener to capture button
         // send data on click
@@ -205,27 +223,25 @@ class MainActivity : AppCompatActivity() {
     fun receiveSettings(sett: String) {
         val message = if(sett=="") "No settings" else sett
 
-        Toast.makeText(this,
-            "Settings: $message",
-            Toast.LENGTH_SHORT).show()
-
-        Log.d(TAG, "Settings: $message")
+        Log.v(TAG, "Settings: $message")
 
         // import settings
-
         var json = JSONObject(message)
         val flash = json.getInt("flash") == 1
-        val res_width = json.getInt("res_width")
-        val res_height = json.getInt("res_height")
+        val resWidth = json.getInt("res_width")
+        val resHeight = json.getInt("res_height")
         val front = json.getInt("front") == 1
         val quality = json.getInt("quality") == 1
 
-        camera?.setSettings(
+        // set camera settings
+        val settingChanged = camera?.setSettings(
             flash,
-            Size(res_width, res_height),
+            Size(resWidth, resHeight),
             front,
-            quality)
+            quality)?:false
 
+        if(settingChanged)
+            sendData()
     }
 
     /**
