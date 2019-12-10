@@ -17,7 +17,9 @@ import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
+import org.json.JSONException
 import org.json.JSONObject
+import java.lang.Exception
 import java.lang.ref.WeakReference
 import java.util.*
 
@@ -43,10 +45,8 @@ class MySettingsFragment : PreferenceFragmentCompat() {
 
 
 /*                     TODO APP LIST
- todo-1 add listener to get camera options from the server
  todo-2 add device registration
- todo-3 if fine location not granted use course location
- todo-4 check if camera is ready when shooting
+ todo-3 check location for older androids
  todo-5 watch after CameraX updates (it's in alpha faze)
  todo-6 send error messages to server
  todo-7 think a bit about threads
@@ -55,11 +55,12 @@ class MySettingsFragment : PreferenceFragmentCompat() {
  todo-10 send images with low resolution
  todo-11 Check edge cases
  todo-12 add comments to new code pieces
+ todo-13 Check try-catch statements
 */
 
 
 /*                      TODO WEB LIST
- todo-web-1 Save images as web images
+ todo-web-1 Save images as web images and sample them
  todo-web-2 Add any devices with strange ID into new_devices table
  todo-web-3 Add registration device page
  todo-web-4 Add registration by email -- use input type mail --
@@ -67,15 +68,15 @@ class MySettingsFragment : PreferenceFragmentCompat() {
  todo-web-5 Check php on SQL injections
  todo-web-6 Check edge cases
  todo-web-7 Change images on locations page (index.php)
- todo-web-8 Page devices output different data, use $_SESSION to store data
  todo-web-9 Add cookies?
  todo-web-10 Check web php scripts and comment them
+ todo-web-11 Refresh web page
 */
 
 
 
 /*                      TODO DATABASE
- todo-db-1 ...
+ todo-db-1 Forbid equal indexes in some tables
 */
 
 
@@ -83,25 +84,29 @@ class MySettingsFragment : PreferenceFragmentCompat() {
 //                                   MAIN APP SCHEME
 //
 //
-//        *****************************            *****************************
-//        *  <Main Activity>          *        --->*  <ProjXCamera>            *
-//        *                           *        |   *                           *
-//        *  Send Timer               *        |   *  Get photo by CameraX     *
-//        *   - Shoot and send photo->*---------   *  Send photo               *
-//        *   - Get and send status-->*---         *    - UploadFileAsync()--->*----------
-//        *****************************  |         *****************************         |
-//                                       |                                               |
-//                                       |                                               |
-//        **************************     |         ***********************************   |
-//        *  <ProjXDevStatus>      *<-----    ---->*  <MultipartUtility>             *<---
-//        *                        *          |    *                                 *
-//        *  Get Status            *          |    *  Send fields (JSON, value, ...) *
-//        *   - Get location       *          |    *  Send files (as byte string)    *
-//        *   - Get battery status *          |    ***********************************
-//        *  Send Status           *          |
-//        *   - UploadState()----->*-----------
-//        **************************
-
+//    *****************************            *****************************
+//    *  <MainActivity>           *            *  <ProjXCamera>            *
+//    *                           *            *                           *
+//    *  Get Settings Timer       *            *  GetDevSettings(...)----->*----->-----
+//    *  - Request Settings------>*----->----->*  - Request Settings       *          |
+//    *  Receive Settings         *<----<------*< - Receive Settings       *          |
+//    *  Send Timer               *            *  Get photo by CameraX     *          |
+//    *  - Shoot and send photo-->*----->----->*  Send photo               *          |
+//    *  - Get and send status--->*---         *  - UploadFileAsync()----->*-->--     V
+//    *****************************  |         *****************************    |     |
+//                                   |                                          V     |
+//                                   V                                          |     |
+//                                   |                                          V     |
+//    **************************     |          ***********************************   |
+//    *  <ProjXDevStatus>      *<-----     ---->*  <MultipartUtility>             *<---
+//    *                        *           |    *                                 *
+//    *  Get Status            *           |    *  Send fields (JSON, value, ...) *
+//    *   - Get location       *           ^    *  Send files (as byte string)    *
+//    *   - Get battery status *           |    ***********************************
+//    *  Send Status           *           |
+//    *   - UploadState()----->*----->------
+//    **************************
+//
 
 
 class MainActivity : AppCompatActivity() {
@@ -211,37 +216,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // todo put it in separated file
     private fun requestSettings() {
-        // get fresh android_id from preferences
-        val weakRef = WeakReference<MainActivity>(this)
-
-        // get settings from server
-        GetDevSettings(weakRef).execute(getSettingsUrl, getFreshID())
-
+        camera?.requestSettings(getSettingsUrl, getFreshID())
     }
 
+    // todo put it in separated file also
     fun receiveSettings(sett: String) {
-        val message = if(sett=="") "No settings" else sett
-
-        Log.v(TAG, "Settings: $message")
-
-        // import settings
-        var json = JSONObject(message)
-        val flash = json.getInt("flash") == 1
-        val resWidth = json.getInt("res_width")
-        val resHeight = json.getInt("res_height")
-        val front = json.getInt("front") == 1
-        val quality = json.getInt("quality") == 1
-
-        // set camera settings
-        val settingChanged = camera?.setSettings(
-            flash,
-            Size(resWidth, resHeight),
-            front,
-            quality)?:false
-
-        if(settingChanged)
+        if(camera?.setSettings(sett) == true) {
             sendData()
+        }
     }
 
     /**
@@ -288,7 +272,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getFreshID(): String {
-        return sharedPreferences.getString("android_id", "")?:""
+        try {
+            return sharedPreferences.getString("android_id", "")?:""
+        } catch (ex:Exception) {
+            Log.e(TAG, "Get fresh id error")
+        }
+        return  "pref_id_error"
     }
 
     override fun onResume() {

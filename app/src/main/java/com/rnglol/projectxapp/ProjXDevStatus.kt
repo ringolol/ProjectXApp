@@ -9,6 +9,7 @@ import android.util.Log
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.Task
 import org.json.JSONObject
+import java.lang.Exception
 
 class ProjXDevStatus// init gps
     (main_act: MainActivity) {
@@ -82,25 +83,32 @@ class ProjXDevStatus// init gps
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
                 locationResult ?: return
-                for (location in locationResult.locations){
+                for (location: Location? in locationResult.locations) {
                     // update position
-                    latitude = location.latitude
-                    longitude = location.longitude
+                    if (location != null) {
+                        latitude = location.latitude
+                        longitude = location.longitude
+                    }
                 }
                 Log.v(TAG, "Forced location update: $latitude/$longitude")
             }
         }
 
         // get course location request
-        fusedLocationClient.requestLocationUpdates(locationRequest,
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
             locationCallback,
-            Looper.getMainLooper())
+            Looper.getMainLooper()
+        )
         // add course location update listeners
         fusedLocationClient.lastLocation
-            .addOnSuccessListener { location : Location ->
+            .addOnSuccessListener { location: Location? ->
                 // update position
-                latitude=location.latitude
-                longitude=location.longitude
+                if (location != null) {
+                    latitude = location.latitude
+                    longitude = location.longitude
+                }
+
                 Log.v(TAG, "Fused location update: $latitude/$longitude")
             }
             .addOnFailureListener {
@@ -112,25 +120,33 @@ class ProjXDevStatus// init gps
         Log.d(TAG, "Start location update")
 
         // set-up location request
-        createLocationRequest()
+        try {
+            createLocationRequest()
+        } catch (ex: Exception) {
+            Log.e(TAG, "Location request error")
+        }
     }
 
     fun getAndSendStatus(time_stamp: String, sendJsonUrl: String, androidId: String) {
         Log.d(TAG, "Get and send status")
 
-        // prepare battery status
-        prepareBatteryStatus()
+        try {
+            // prepare battery status
+            prepareBatteryStatus()
 
-        // create JSON which will be sent
-        val jsonPos = JSONObject()
-        jsonPos.put("time_stamp",time_stamp)
-        jsonPos.put("android_id",androidId)
-        jsonPos.put("latitude",latitude)
-        jsonPos.put("longitude",longitude)
-        jsonPos.put("charge_level",batteryPct)
-        jsonPos.put("charge_status",chargeStatus)
+            // create JSON which will be sent
+            val jsonPos = JSONObject()
+            jsonPos.put("time_stamp",time_stamp)
+            jsonPos.put("android_id",androidId)
+            jsonPos.put("latitude",latitude)
+            jsonPos.put("longitude",longitude)
+            jsonPos.put("charge_level",batteryPct)
+            jsonPos.put("charge_status",chargeStatus)
 
-        // upload JSON to server
-        UploadState().execute(sendJsonUrl, jsonPos.toString())
+            // upload JSON to server
+            UploadState().execute(sendJsonUrl, jsonPos.toString())
+        } catch (ex: Exception) {
+            Log.e(TAG, "Get and send status error")
+        }
     }
 }
