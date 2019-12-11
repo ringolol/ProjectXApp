@@ -43,9 +43,9 @@ public class GetDevSettings extends AsyncTask<String, Void, String> {
             if(responses.size()>0)
                 return responses.get(0);
 
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception ex) {
             Log.e(TAG, "Error occurred during getting settings.");
+            ex.printStackTrace();
         }
         return "";
 

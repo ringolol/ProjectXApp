@@ -64,6 +64,7 @@ class ProjXCamera// Add this at the end of onCreate function
             GetDevSettings(weakRef).execute(getSettingsUrl, androidId)
         } catch (ex: Exception) {
             Log.e(TAG, "Request settings error")
+            ex.printStackTrace()
         }
 
     }
@@ -108,8 +109,13 @@ class ProjXCamera// Add this at the end of onCreate function
             return true
 
         }  catch (ex: JSONException) {
-            Log.e(TAG, "Settings receive error, message: $message")
+            Log.e(TAG, "Incorrect JSON: $message")
+            ex.printStackTrace()
+        }   catch (ex: Exception) {
+            Log.e(TAG, "Set Settings error")
+            ex.printStackTrace()
         }
+
 
         return false
     }
@@ -205,6 +211,7 @@ class ProjXCamera// Add this at the end of onCreate function
 
         } catch (ex: Exception) {
             Log.e(TAG, "Camera start error")
+            ex.printStackTrace()
         }
     }
 
@@ -283,6 +290,7 @@ class ProjXCamera// Add this at the end of onCreate function
                 })
         } catch (ex: Exception) {
             Log.e(TAG, "Shoot and send error")
+            ex.printStackTrace()
         }
     }
 }

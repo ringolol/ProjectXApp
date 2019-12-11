@@ -124,6 +124,7 @@ class ProjXDevStatus// init gps
             createLocationRequest()
         } catch (ex: Exception) {
             Log.e(TAG, "Location request error")
+            ex.printStackTrace()
         }
     }
 
@@ -147,6 +148,7 @@ class ProjXDevStatus// init gps
             UploadState().execute(sendJsonUrl, jsonPos.toString())
         } catch (ex: Exception) {
             Log.e(TAG, "Get and send status error")
+            ex.printStackTrace()
         }
     }
 }

@@ -41,9 +41,9 @@ public class UploadFileAsync extends AsyncTask<String, Void, String> {
             for(int i=0; i < responses.size(); i++) {
                 Log.d(TAG, "Server output: " + responses.get(i));
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception ex) {
             Log.e(TAG, "Error occurred during Photo sending.");
+            ex.printStackTrace();
         }
         return "";
     }

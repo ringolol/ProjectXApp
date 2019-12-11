@@ -65,6 +65,13 @@ class MySettingsFragment : PreferenceFragmentCompat() {
  todo-web-6 Check edge cases
  todo-web-9 Add cookies?
  todo-web-10 Add camera settings resolution
+
+ 60 sec \
+ 30 sec  |- timer options
+ 10 sec_/
+
+ ошибка null object
+
 */
 
 
@@ -127,7 +134,7 @@ class MainActivity : AppCompatActivity() {
     // get settings timer
     private var getSettTimer = Timer()
     private var getSettTask: TimerTask? = null
-    private val getSettInterval: Long = 1000
+    private var getSettInterval: Long = 60000
 
     // send URL's
     private val baseUrl = "http://31.134.153.18"
@@ -139,6 +146,7 @@ class MainActivity : AppCompatActivity() {
     private val fileSendName = "sent_image"
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         Log.d(TAG,"Creating Main Activity")
 
         // default things
@@ -175,29 +183,9 @@ class MainActivity : AppCompatActivity() {
         // init status
         status = ProjXDevStatus(this)
 
-        // set-up sending data timer
-        // send data on each tick
-        class SendDataTask : TimerTask() {
-            override fun run() {
-                Log.v(TAG,"Send data timer TIC")
-                sendData()
-            }
-        }
-        // start sending data timer
-        sendDataTask = SendDataTask()
-        sendDataTimer.scheduleAtFixedRate(sendDataTask, 0, sendInterval)
+        startSendTimer(sendInterval)
 
-        // set-up get settings timer
-        // send data on each tick
-        class GetSettTask : TimerTask() {
-            override fun run() {
-                Log.v(TAG,"Get settings timer TIC")
-                requestSettings()
-            }
-        }
-        // start get settings timer
-        getSettTask = GetSettTask()
-        getSettTimer.scheduleAtFixedRate(getSettTask, 0, getSettInterval)
+        startGetSettTimer(getSettInterval)
 
         // add on click listener to capture button
         // send data on click
@@ -210,6 +198,51 @@ class MainActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.settings_button).setOnClickListener {
             Log.d(TAG,"Settings btn click")
             requestSettings()
+        }
+    }
+
+    private fun startSendTimer(interval: Long) {
+
+        try {
+            // if task is not null cancel it
+            sendDataTask?.cancel()
+
+            // set-up sending data timer
+            // send data on each tick
+            class SendDataTask : TimerTask() {
+                override fun run() {
+                    Log.v(TAG,"Send data timer TIC")
+                    sendData()
+                }
+            }
+            // start sending data timer
+            sendDataTask = SendDataTask()
+            sendDataTimer.scheduleAtFixedRate(sendDataTask, 0, interval)
+        } catch(ex: Exception) {
+            Log.e(TAG,"startSendTimer error")
+            ex.printStackTrace()
+        }
+    }
+
+    private fun startGetSettTimer(interval: Long) {
+
+        try {
+            // if task is not null cancel it
+            getSettTask?.cancel()
+
+            // set-up get settings timer
+            // send data on each tick
+            class GetSettTask : TimerTask() {
+                override fun run() {
+                    Log.v(TAG,"Get settings timer TIC")
+                    requestSettings()
+                }
+            }
+            // start get settings timer
+            getSettTask = GetSettTask()
+            getSettTimer.scheduleAtFixedRate(getSettTask, 0, interval)
+        } catch (ex: Exception) {
+            Log.e(TAG, "startGetSettTimer error")
         }
     }
 
@@ -233,6 +266,7 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
                 camera = ProjXCamera(this)
@@ -271,15 +305,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getFreshID(): String {
+
         try {
             return sharedPreferences.getString("android_id", "")?:""
-        } catch (ex:Exception) {
+        } catch (ex: Exception) {
             Log.e(TAG, "Get fresh id error")
+            ex.printStackTrace()
         }
         return  "pref_id_error"
     }
 
     override fun onResume() {
+
         super.onResume()
 
         Log.d(TAG,"resume to app, start location upd")
