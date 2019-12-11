@@ -53,6 +53,8 @@ class ProjXCamera// Add this at the end of onCreate function
         viewFinder.post { startCamera() }
     }
 
+    // todo consider putting it into main activity
+    // request camera settings from the server
     fun requestSettings(getSettingsUrl: String, androidId: String) {
         try{
             // get fresh android_id from preferences
@@ -66,36 +68,41 @@ class ProjXCamera// Add this at the end of onCreate function
 
     }
 
+    // set settings from json
     fun setSettings(message: String): Boolean {
 
         try {
             val json = JSONObject(message)
+            // get values from json
             val uFlash = json.getInt("flash") == 1
             val resWidth = json.getInt("res_width")
             val resHeight = json.getInt("res_height")
             val uFront = json.getInt("front") == 1
             val bQual = json.getInt("quality") == 1
 
+            // required resolution
             val reso = Size(resWidth, resHeight)
 
+            // if required setting didn't change, return
             if(useFlash == uFlash  && resolution == reso
                 && useFront == uFront && bestQuality == bQual)
                 return false
 
+            // update settings
             useFlash = uFlash
             resolution = reso
             useFront = uFront
             bestQuality = bQual
 
+            // make some information noise
             val msg = "Set settings: flash $useFlash, res: ${resolution}, " +
                     "front: $useFront, quality: $bestQuality"
-
             Log.d(TAG, msg)
-
             viewFinder.post {
                 Toast.makeText(mainActivity.baseContext, msg, Toast.LENGTH_SHORT).show()
             }
 
+            // start camera with new settings
             startCamera()
 
             return true
@@ -106,10 +113,6 @@ class ProjXCamera// Add this at the end of onCreate function
 
         return false
     }
-
-    /*private fun startCamera() {
-        startCamera(useFlash = false, resolution = Size(480, 480), useFront = false, bestQuality = false)
-    }*/
 
     private fun startCamera() {
 
@@ -135,7 +138,11 @@ class ProjXCamera// Add this at the end of onCreate function
             Log.d(TAG, "add layout")
             // Create configuration object for the viewfinder use case
             val previewConfig = PreviewConfig.Builder().apply {
+
+                // set required resolution for preview
                 setTargetResolution(resolution)
+
+                // set required camera orientation for preview
                 setLensFacing(lensFacing)
             }.build()
 
@@ -164,29 +171,31 @@ class ProjXCamera// Add this at the end of onCreate function
                     // we select a capture mode which will infer the appropriate
                     // resolution based on aspect ration and requested mode
 
+                    // set required quality
                     if (bestQuality)
                         setCaptureMode(ImageCapture.CaptureMode.MAX_QUALITY)
                     else
                         setCaptureMode(ImageCapture.CaptureMode.MIN_LATENCY)
 
+                    // set required flash mode
                     if (useFlash)
                         setFlashMode(FlashMode.ON)
 
-                    // todo it also changes picture area, fix it
-                    // might not work because of CameraX being in alpha
+                    // set required resolution
                     setTargetResolution(resolution)
 
+                    // set required camera orientation
+                    setLensFacing(lensFacing)
 
                     // todo add capture stages?
                     //setMaxCaptureStages()
-
-                    setLensFacing(lensFacing)
                 }.build()
 
 
             // Build the image capture use case and attach button click listener
             imageCapture = ImageCapture(imageCaptureConfig)
             Log.d(TAG, "image capture config")
+
             // Bind use cases to lifecycle
             // If Android Studio complains about "this" being not a LifecycleOwner
             // try rebuilding the project or updating the appcompat dependency to
@@ -227,7 +236,6 @@ class ProjXCamera// Add this at the end of onCreate function
                           fileSendName: String, androidId: String) {
 
         try {
-            // todo check that texture is ready?
             // get internal app dir
             val fileDir: String = mainActivity.filesDir.toString()
             // create file in this dir

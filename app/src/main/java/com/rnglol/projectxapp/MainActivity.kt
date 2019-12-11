@@ -45,17 +45,13 @@ class MySettingsFragment : PreferenceFragmentCompat() {
 
 
 /*                     TODO APP LIST
- todo-2 add device registration
  todo-3 check location for older androids
  todo-5 watch after CameraX updates (it's in alpha faze)
  todo-6 send error messages to server
  todo-7 think a bit about threads
  todo-8 add send request flag to ProjXCamera and ProjXDevStatus
- todo-9 use web socket?
- todo-10 send images with low resolution
+ todo-9 OR use web socket?
  todo-11 Check edge cases
- todo-12 add comments to new code pieces
- todo-13 Check try-catch statements
 */
 
 
@@ -67,17 +63,17 @@ class MySettingsFragment : PreferenceFragmentCompat() {
         (+use email server to send mail to user)
  todo-web-5 Check php on SQL injections
  todo-web-6 Check edge cases
- todo-web-7 Change images on locations page (index.php)
  todo-web-9 Add cookies?
- todo-web-10 Check web php scripts and comment them
- todo-web-11 Refresh web page
+ todo-web-10 Add camera settings resolution
 */
 
 
 
 /*                      TODO DATABASE
  todo-db-1 Forbid equal indexes in some tables
+ todo-db-2 Check edge cases
 */
+
 
 
 
@@ -87,13 +83,13 @@ class MySettingsFragment : PreferenceFragmentCompat() {
 //    *****************************            *****************************
 //    *  <MainActivity>           *            *  <ProjXCamera>            *
 //    *                           *            *                           *
-//    *  Get Settings Timer       *            *  GetDevSettings(...)----->*----->-----
+//    *  Get Settings Timer       *            *  GetDevSettings(...)<---->*<---<->----
 //    *  - Request Settings------>*----->----->*  - Request Settings       *          |
 //    *  Receive Settings         *<----<------*< - Receive Settings       *          |
 //    *  Send Timer               *            *  Get photo by CameraX     *          |
-//    *  - Shoot and send photo-->*----->----->*  Send photo               *          |
-//    *  - Get and send status--->*---         *  - UploadFileAsync()----->*-->--     V
-//    *****************************  |         *****************************    |     |
+//    *  - Shoot and send photo-->*----->----->*  Send photo               *          ^
+//    *  - Get and send status--->*---         *  - UploadFileAsync()----->*-->--     |
+//    *****************************  |         *****************************    |     V
 //                                   |                                          V     |
 //                                   V                                          |     |
 //                                   |                                          V     |
@@ -109,6 +105,7 @@ class MySettingsFragment : PreferenceFragmentCompat() {
 //
 
 
+
 class MainActivity : AppCompatActivity() {
 
     // tag for logger
@@ -119,8 +116,6 @@ class MainActivity : AppCompatActivity() {
     // status is used for getting and sending device statuses
     private var status: ProjXDevStatus? = null
 
-    // device id, which we generate or set for it
-    //private var androidId: String = ""
     // preferences is used for storing android id
     private lateinit var sharedPreferences: SharedPreferences
 
@@ -135,9 +130,11 @@ class MainActivity : AppCompatActivity() {
     private val getSettInterval: Long = 1000
 
     // send URL's
-    private val sendFileUrl = "http://31.134.153.18/app_scripts/upload_file.php"
-    private val sendJsonUrl = "http://31.134.153.18/app_scripts/get_json.php"
-    private val getSettingsUrl = "http://31.134.153.18/app_scripts/give_settings.php"
+    private val baseUrl = "http://31.134.153.18"
+    private val sendFileUrl = "$baseUrl/app_scripts/upload_file.php"
+    private val sendJsonUrl = "$baseUrl/app_scripts/get_json.php"
+    private val getSettingsUrl = "$baseUrl/app_scripts/give_settings.php"
+
     // image identifier during sending
     private val fileSendName = "sent_image"
 
@@ -216,14 +213,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // todo put it in separated file
+    // request camera settings from the server
     private fun requestSettings() {
         camera?.requestSettings(getSettingsUrl, getFreshID())
     }
 
-    // todo put it in separated file also
+    // receive camera settings from the server
     fun receiveSettings(sett: String) {
+        // set camera settings from json
         if(camera?.setSettings(sett) == true) {
+            // if camera setting changed send new picture to server
             sendData()
         }
     }

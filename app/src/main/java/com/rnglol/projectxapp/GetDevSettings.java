@@ -40,7 +40,8 @@ public class GetDevSettings extends AsyncTask<String, Void, String> {
             for(int i=0; i < responses.size(); i++) {
                 Log.v(TAG, "Server output: " + responses.get(i));
             }
-            return responses.get(0);
+            if(responses.size()>0)
+                return responses.get(0);
 
         } catch (IOException e) {
             e.printStackTrace();
