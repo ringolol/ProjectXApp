@@ -129,12 +129,12 @@ class MainActivity : AppCompatActivity() {
     // send data timer settings
     private var sendDataTimer = Timer()
     private var sendDataTask: TimerTask? = null
-    private val sendInterval: Long = 60000
+    private var sendInterval: Long = 60000
 
     // get settings timer
     private var getSettTimer = Timer()
     private var getSettTask: TimerTask? = null
-    private var getSettInterval: Long = 60000
+    private var getSettInterval: Long = 1000
 
     // send URL's
     private val baseUrl = "http://31.134.153.18"
@@ -144,6 +144,9 @@ class MainActivity : AppCompatActivity() {
 
     // image identifier during sending
     private val fileSendName = "sent_image"
+
+    // force shoot
+    private var dummyForceShoot: Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -254,9 +257,44 @@ class MainActivity : AppCompatActivity() {
     // receive camera settings from the server
     fun receiveSettings(sett: String) {
         // set camera settings from json
-        if(camera?.setSettings(sett) == true) {
-            // if camera setting changed send new picture to server
-            sendData()
+        try {
+            //get new timer interval
+            val json = JSONObject(sett)
+
+            val sInter = json.getLong("upd_interval")
+            // if interval changed
+            if(sInter != sendInterval) {
+                // restart timer with new interval
+                sendInterval = sInter
+                startSendTimer(sendInterval)
+
+                val msg = "New timer interval: ${sendInterval/1000} sec"
+                Log.d(TAG, msg)
+                Toast.makeText(this,
+                    msg,
+                    Toast.LENGTH_SHORT).show()
+            }
+
+            // upd camera settings
+            if(camera?.setSettings(json) == true) {
+                // if camera setting changed send new picture to server
+                sendData()
+            }
+
+            // force shoot if dummy changed
+            if(json.getInt("dummy") != dummyForceShoot) {
+                if(dummyForceShoot != -1) {
+                    sendData()
+                }
+                dummyForceShoot = json.getInt("dummy")
+            }
+
+        }  catch (ex: JSONException) {
+            Log.e(TAG, "Incorrect JSON: $sett")
+            ex.printStackTrace()
+        } catch (ex: Exception) {
+            Log.e(TAG, "Set send timer interval error")
+            ex.printStackTrace()
         }
     }
 

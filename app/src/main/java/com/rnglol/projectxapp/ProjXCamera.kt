@@ -57,7 +57,7 @@ class ProjXCamera// Add this at the end of onCreate function
     // request camera settings from the server
     fun requestSettings(getSettingsUrl: String, androidId: String) {
         try{
-            // get fresh android_id from preferences
+            // get weak mainActivity reference
             val weakRef = WeakReference<MainActivity>(mainActivity)
 
             // get settings from server
@@ -70,10 +70,10 @@ class ProjXCamera// Add this at the end of onCreate function
     }
 
     // set settings from json
-    fun setSettings(message: String): Boolean {
+    fun setSettings(json: JSONObject): Boolean {
 
         try {
-            val json = JSONObject(message)
+            //val json = JSONObject(message)
             // get values from json
             val uFlash = json.getInt("flash") == 1
             val resWidth = json.getInt("res_width")
@@ -84,7 +84,7 @@ class ProjXCamera// Add this at the end of onCreate function
             // required resolution
             val reso = Size(resWidth, resHeight)
 
-            // if required setting didn't change, return
+            // if required settings didn't change, return
             if(useFlash == uFlash  && resolution == reso
                 && useFront == uFront && bestQuality == bQual)
                 return false
@@ -96,7 +96,7 @@ class ProjXCamera// Add this at the end of onCreate function
             bestQuality = bQual
 
             // make some information noise
-            val msg = "Set settings: flash $useFlash, res: ${resolution}, " +
+            val msg = "Set settings: flash $useFlash, " +
                     "front: $useFront, quality: $bestQuality"
             Log.d(TAG, msg)
             viewFinder.post {
@@ -109,7 +109,7 @@ class ProjXCamera// Add this at the end of onCreate function
             return true
 
         }  catch (ex: JSONException) {
-            Log.e(TAG, "Incorrect JSON: $message")
+            Log.e(TAG, "Incorrect JSON: $json")
             ex.printStackTrace()
         }   catch (ex: Exception) {
             Log.e(TAG, "Set Settings error")
