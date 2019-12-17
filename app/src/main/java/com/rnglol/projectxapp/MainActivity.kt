@@ -3,6 +3,11 @@ package com.rnglol.projectxapp
 import android.Manifest
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraAccessException
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
+import android.hardware.camera2.CameraManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.util.Size
@@ -199,8 +204,60 @@ class MainActivity : AppCompatActivity() {
 
         // get settings on click
         findViewById<ImageButton>(R.id.settings_button).setOnClickListener {
-            Log.d(TAG,"Settings btn click")
-            requestSettings()
+            Log.d(TAG,"Test btn click")
+            val manager: CameraManager =
+            getSystemService(CAMERA_SERVICE) as CameraManager
+
+            try {
+                for(cameraId:String? in manager.cameraIdList) {
+                    if(cameraId == null) break
+
+                    val chars: CameraCharacteristics = manager.getCameraCharacteristics(cameraId)
+                    /*var keys: List<Any?> =
+                            chars.availableCaptureRequestKeys +
+                            chars.availableCaptureResultKeys +
+                            chars.availableCaptureResultKeys*/
+
+
+
+                    /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        keys = keys + (chars.availableSessionKeys + chars.availableCaptureResultKeys)
+                    }*/
+                    var json = JSONObject()
+
+                    for(key: CameraCharacteristics.Key<*>? in chars.keys) {
+                        json.put(key.toString(), chars.get(key))
+                    }
+
+
+                    val sb = json.toString()
+
+
+                    if (sb.length > 4000) {
+                        Log.d(TAG, "sb.length = " + sb.length)
+                        val chunkCount = sb.length / 4000    // integer division
+                        for (i in 0..chunkCount) {
+                            val max = 4000 * (i + 1)
+                            if (max >= sb.length) {
+                                Log.d(TAG, "chunk " + i + " of " + chunkCount + ":"
+                                        + sb.substring(4000 * i))
+                            } else {
+                                Log.d(TAG, "chunk " + i + " of " + chunkCount + ":"
+                                        + sb.substring(4000 * i, max))
+                            }
+                        }
+                    } else {
+                        Log.d(TAG, sb)
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        Log.d(TAG, "INFO: ${chars.get(CameraCharacteristics.INFO_VERSION)}")
+                    }
+                }
+            } catch (ex: Exception) {
+                Log.e(TAG, "Get camera settings error")
+                ex.printStackTrace()
+            }
         }
     }
 
