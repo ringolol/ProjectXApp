@@ -142,7 +142,7 @@ class MainActivity : AppCompatActivity() {
     private var getSettInterval: Long = 1000
 
     // send URL's
-    private val baseUrl = "http://31.134.153.18"
+    private val baseUrl = "http://127.0.0.1" // put here your webserver
     private val sendFileUrl = "$baseUrl/app_scripts/upload_file.php"
     private val sendJsonUrl = "$baseUrl/app_scripts/get_json.php"
     private val getSettingsUrl = "$baseUrl/app_scripts/give_settings.php"
